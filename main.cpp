@@ -12,7 +12,8 @@ int main() {
     Solver solver(table, L, b);
     solver.b_column_to_positive();
     solver.create_L1_row_and_full();
-    solver.artificial_basis_2(0,0);
+    solver.artificial_basis_2();
+    solver.Simplex_method();
 
     return 0;
 }

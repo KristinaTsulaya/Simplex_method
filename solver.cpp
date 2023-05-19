@@ -79,7 +79,7 @@ void Solver::create_L1_row_and_full() { // 2 step
     std::vector<std::vector<double>>().swap(simplex_table_copy); // free memory
 }
 
-void Solver::find_chose_col(){
+void Solver::chose_col(){
     for (size_t j = 0; j < cols - 1; ++j) {
         if (simplex_table[rows - 1][j] <= data.min_elem_L1) {
             data.chose_col = j;
@@ -87,7 +87,7 @@ void Solver::find_chose_col(){
         data.min_elem_L1 = std::min(data.min_elem_L1, simplex_table[rows - 1][j]);
     }
 }
-void Solver::find_chose_row(size_t number_of_l_rows){
+void Solver::chose_row(size_t number_of_l_rows){
 
     for (size_t k = 0; k < rows - number_of_l_rows; ++k) { // так как не нужно делить на элементы строки L L1 // todo 2
         double cur_b_elem = simplex_table[k][cols - 1];
@@ -109,74 +109,45 @@ void Solver::find_chose_row(size_t number_of_l_rows){
     }
 }
 
-void Solver::artificial_basis_2(size_t chose_row_, size_t chose_col_) {
+void Solver::jordan() {
+
+    double bas_val = simplex_table[data.chose_row][data.chose_col];
+    std::cout << bas_val << std::endl;
+    simplex_table[data.chose_row][data.chose_col] = 1;
+
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
+            if (i != data.chose_row && j != data.chose_col) {
+                simplex_table[i][j] =
+                        simplex_table[i][j] * bas_val -
+                        simplex_table[data.chose_row][j] * simplex_table[i][data.chose_col];
+            }
+        }
+    }
+
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
+            simplex_table[i][j] /= bas_val;
+        }
+    }
+}
+
+
+void Solver::artificial_basis_2() {
 
     bool do_basis_change = true;
 
     size_t counter_of_artificial_vars = 0;
-    size_t nL_rows = 2; // const так как начинаем с двух L строк
 
     while (do_basis_change) {
 
         ++counter_of_artificial_vars;
 
-        find_chose_col();
+        chose_col();
+        chose_row(data.nL_rows);
+        jordan(); // todo: немного криво с точки зрения удобства, так как на интуитивном уровне хочется передавать два аргумента
 
-
-//        if(do_basis_change) {
-//            find_chose_row(nL_rows);
-//        } else if(do_optimum_decision) {
-//            find_chose_row(nL_rows);
-//        }
-
-
-
-
-        for (size_t k = 0; k < rows - nL_rows; ++k) { // так как не нужно делить на элементы строки L
-            double cur_b_elem = simplex_table[k][cols - 1];
-            for (size_t i = 0; i < rows - nL_rows; ++i) {
-                for (size_t j = 0; j < cols - 1; ++j) {
-                    if (simplex_table[i][j] != 0) {
-                        data.cur_koef = cur_b_elem / simplex_table[i][j];
-                        if (data.cur_koef >= 0) { // обязательное условие для них
-                            data.min_koef = std::min(data.min_koef, data.cur_koef);
-                            if (data.prev_min_koef > data.min_koef) { // если на данном шаге предыдущее значение коэфа больше чем на этом, то нам предыдузий тогда нафиг не нужен
-                                data.chose_row = i; // в моем кейсе вторая строка или 1 по системе отсчета с нуля //
-                            }
-                            data.prev_min_koef = data.min_koef;
-                        }
-                    }
-                }
-            }
-        }
-
-        double bas_val = simplex_table[data.chose_row][data.chose_col];
-        std::cout << bas_val << std::endl;
-        simplex_table[data.chose_row][data.chose_col] = 1;
-
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                if (i != data.chose_row && j != data.chose_col) {
-                    simplex_table[i][j] =
-                            simplex_table[i][j] * bas_val -
-                            simplex_table[data.chose_row][j] * simplex_table[i][data.chose_col];
-                }
-            }
-        }
-
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                simplex_table[i][j] /= bas_val;
-            }
-        }
-
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                std::cout << std::setprecision(3) << simplex_table[i][j] << std::fixed << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
+        print();
 
         data.min_elem_L1 = 0;
         data.min_koef = 100000;
@@ -189,15 +160,52 @@ void Solver::artificial_basis_2(size_t chose_row_, size_t chose_col_) {
         }
     }
 
+    print();
+    matrix_resize(counter_of_artificial_vars);
+    --data.nL_rows;
+}
 
-    ////////////////////////////////////////
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
-                std::cout << std::setprecision(3) << simplex_table[i][j] << std::fixed << " ";
+void Solver::Simplex_method() {
+    bool do_optimum_decision = true;
+    while (do_optimum_decision) {
+
+        chose_col();
+        chose_row(data.nL_rows);
+        jordan();
+
+        for (size_t i = 0; i < rows; ++i) {
+            if (i != data.chose_row) {
+                simplex_table[i][data.chose_col] *= (-1);
             }
-        std::cout << std::endl;
-    } std::cout << std::endl;
+        }
 
+        print();
+
+        data.min_elem_L1 = 0;
+        data.min_koef = 100000;
+
+
+        for (size_t j = 0; j < cols; ++j) {
+            if (simplex_table[rows - 1][j] >= 0) {
+                do_optimum_decision = false;
+            } else {
+                do_optimum_decision = true;
+                break;
+            }
+        }
+    }
+}
+
+
+void Solver::print() {
+    for (auto &i: simplex_table) {
+        for (double j: i) {
+            std::cout << std::setprecision(3) << j << std::fixed << " ";
+        } std::cout << std::endl;
+    } std::cout << std::endl;
+}
+
+void Solver::matrix_resize(size_t counter_of_artificial_vars) {
 
     std::vector<std::vector<double>> simplex_table_copy;
     simplex_table_copy.resize(rows - 1, std::vector<double>());
@@ -219,77 +227,4 @@ void Solver::artificial_basis_2(size_t chose_row_, size_t chose_col_) {
 
     simplex_table = simplex_table_copy;
     std::vector<std::vector<double>>().swap(simplex_table_copy);
-////////////////////////////////////
-
-    --nL_rows;
-    bool do_optimum_decision = true;
-    while (do_optimum_decision) {
-
-    find_chose_col();
-
-        for (size_t k = 0; k < rows - nL_rows; ++k) { // так как не нужно делить на элементы строки L L1
-            double cur_b_elem = simplex_table[k][cols - 1];
-            for (size_t i = 0; i < rows - nL_rows; ++i) {
-                for (size_t j = 0; j < cols - 1; ++j) {
-                    if (simplex_table[i][j] != 0) {
-                        data.cur_koef = cur_b_elem / simplex_table[i][j];
-                        if (data.cur_koef >= 0) { // обязательное условие для них
-                            data.min_koef = std::min(data.min_koef, data.cur_koef);
-                            if (data.prev_min_koef > data.min_koef) { // если на данном шаге предыдущее значение коэфа больше чем на этом, то нам предыдузий тогда нафиг не нужен
-                                data.chose_row = i; // в моем кейсе вторая строка или 1 по системе отсчета с нуля //
-                            }
-                            data.prev_min_koef = data.min_koef;
-                        }
-                    }
-                }
-            }
-        }
-
-        double bas_val = simplex_table[data.chose_row][data.chose_col];
-        std::cout << bas_val << std::endl;
-        simplex_table[data.chose_row][data.chose_col] = 1;
-
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                if (i != data.chose_row && j != data.chose_col) {
-                    simplex_table[i][j] =
-                            simplex_table[i][j] * bas_val -
-                            simplex_table[data.chose_row][j] * simplex_table[i][data.chose_col];
-                }
-            }
-        }
-
-        for (auto &i: simplex_table) {
-            for (double &j: i) {
-                j /= bas_val;
-            }
-        }
-
-        for (size_t i = 0; i < rows; ++i) {
-            if (i != data.chose_row) {
-                simplex_table[i][data.chose_col] *= (-1);
-            }
-        }
-
-        for (auto &i: simplex_table) {
-            for (double j: i) {
-                std::cout << std::setprecision(3) << j << std::fixed << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-
-        data.min_elem_L1 = 0;
-        data.min_koef = 100000;
-
-
-        for (size_t j = 0; j < cols; ++j) {
-            if (simplex_table[rows - 1][j] >= 0) {
-                do_optimum_decision = false;
-            } else {
-                do_optimum_decision = true;
-                break;
-            }
-        }
-    }
 }
