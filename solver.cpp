@@ -94,8 +94,7 @@ void Solver::chose_row(size_t number_of_l_rows) {
         if (simplex_table[i][data.chose_col] != 0) {
             data.cur_koef = simplex_table[i][cols - 1] / simplex_table[i][data.chose_col];
             if (data.cur_koef >= 0) { // обязательное условие для них
-                if (data.cur_koef <
-                    data.min_koef) { // если на данном шаге предыдущее значение коэфа больше чем на этом, то нам предыдузий тогда нафиг не нужен
+                if (data.cur_koef < data.min_koef) {
                     data.chose_row = i;
                 }
                 data.min_koef = std::min(data.min_koef, data.cur_koef);
@@ -140,7 +139,7 @@ void Solver::artificial_basis_2() {
 
         chose_col();
         chose_row(data.nL_rows);
-        jordan(); // todo: немного криво с точки зрения удобства, так как на интуитивном уровне хочется передавать два аргумента
+        jordan();
 
         print();
 
@@ -196,10 +195,8 @@ void Solver::print() {
     for (auto &i: simplex_table) {
         for (double j: i) {
             std::cout << std::setprecision(3) << j << std::fixed << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
+        } std::cout << std::endl;
+    } std::cout << std::endl;
 }
 
 void Solver::matrix_resize(size_t counter_of_artificial_vars) {
