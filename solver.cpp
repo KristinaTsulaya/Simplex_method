@@ -68,7 +68,7 @@ void Solver::create_L1_row_and_full() { // 2 step
         simplex_table_copy[rows - 1][j] *= (-1);
     }
     simplex_table = simplex_table_copy;
-    for (const auto& i: simplex_table) {
+    for (const auto &i: simplex_table) {
         for (auto j: i) {
             std::cout << j << " ";
         }
@@ -79,7 +79,7 @@ void Solver::create_L1_row_and_full() { // 2 step
     std::vector<std::vector<double>>().swap(simplex_table_copy); // free memory
 }
 
-void Solver::chose_col(){
+void Solver::chose_col() {
     for (size_t j = 0; j < cols - 1; ++j) {
         if (simplex_table[rows - 1][j] <= data.min_elem_L1) {
             data.chose_col = j;
@@ -87,23 +87,18 @@ void Solver::chose_col(){
         data.min_elem_L1 = std::min(data.min_elem_L1, simplex_table[rows - 1][j]);
     }
 }
-void Solver::chose_row(size_t number_of_l_rows){
 
-    for (size_t k = 0; k < rows - number_of_l_rows; ++k) { // так как не нужно делить на элементы строки L L1 // todo 2
-        double cur_b_elem = simplex_table[k][cols - 1];
-        for (size_t i = 0; i < rows - number_of_l_rows; ++i) {
-            for (size_t j = 0; j < cols - 1; ++j) {
-                if (simplex_table[i][j] != 0) {
-                    data.cur_koef = cur_b_elem / simplex_table[i][j];
-                    if (data.cur_koef >= 0) { // обязательное условие для них
-                        data.min_koef = std::min(data.min_koef, data.cur_koef);
-                        if (data.prev_min_koef >
-                            data.min_koef) { // если на данном шаге предыдущее значение коэфа больше чем на этом, то нам предыдузий тогда нафиг не нужен
-                            data.chose_row = i; // в моем кейсе вторая строка или 1 по системе отсчета с нуля //
-                        }
-                        data.prev_min_koef = data.min_koef;
-                    }
+void Solver::chose_row(size_t number_of_l_rows) {
+
+    for (size_t i = 0; i < rows - number_of_l_rows; ++i) {
+        if (simplex_table[i][data.chose_col] != 0) {
+            data.cur_koef = simplex_table[i][cols - 1] / simplex_table[i][data.chose_col];
+            if (data.cur_koef >= 0) { // обязательное условие для них
+                if (data.cur_koef <
+                    data.min_koef) { // если на данном шаге предыдущее значение коэфа больше чем на этом, то нам предыдузий тогда нафиг не нужен
+                    data.chose_row = i;
                 }
+                data.min_koef = std::min(data.min_koef, data.cur_koef);
             }
         }
     }
@@ -186,7 +181,7 @@ void Solver::Simplex_method() {
 
 
         for (size_t j = 0; j < cols; ++j) {
-            if (simplex_table[rows - 1][j] >= 0) {
+            if (simplex_table[rows - 1][j] > 0) {
                 do_optimum_decision = false;
             } else {
                 do_optimum_decision = true;
@@ -201,8 +196,10 @@ void Solver::print() {
     for (auto &i: simplex_table) {
         for (double j: i) {
             std::cout << std::setprecision(3) << j << std::fixed << " ";
-        } std::cout << std::endl;
-    } std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }
 
 void Solver::matrix_resize(size_t counter_of_artificial_vars) {
@@ -213,11 +210,11 @@ void Solver::matrix_resize(size_t counter_of_artificial_vars) {
         simplex_table_copy[i].resize(cols - counter_of_artificial_vars);
     }
     for (size_t i = 0; i < simplex_table.size() - 1; ++i) {
+        size_t j_col = 0;
         for (size_t j = 0; j < simplex_table[i].size(); ++j) {
-            if (j < 2) {
-                simplex_table_copy[i][j] = simplex_table[i][j];
-            } else if (j == cols - 1) {
-                simplex_table_copy[i][cols - counter_of_artificial_vars - 1] = simplex_table[i][j];
+            if (simplex_table[rows - 1][j] == 0) {
+                simplex_table_copy[i][j_col] = simplex_table[i][j];
+                ++j_col;
             }
         }
     }
