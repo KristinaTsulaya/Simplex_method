@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <cmath>
 
 class Solver {
 private:
@@ -16,14 +17,14 @@ private:
     std::vector<double> L, b;
 
 public:
-    struct Data{
+    struct Data {
         double min_koef = 1000000; // специально задаю любой неотрицательный коэф, который чисто теор может быть в этой таблицу минимальным
-        double prev_min_koef = 1000000;
         double cur_koef = 0;
         double min_elem_L1 = 0; // по сути максимальный из возможных, так как на него огранич (<=0)
         size_t chose_col = 0;
         size_t chose_row = 0;
         size_t nL_rows = 2; // const так как начинаем с двух L строк
+        double eps = 0.1e-13;
     };
     Solver(std::vector<std::vector<double>>&, std::vector<double>&, std::vector<double>&);
     Data data;

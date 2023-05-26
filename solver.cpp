@@ -146,7 +146,7 @@ void Solver::artificial_basis_2() {
         data.min_elem_L1 = 0;
         data.min_koef = 100000;
 
-        if (simplex_table[rows - 1][cols - 1] == 0) {
+        if (std::abs(simplex_table[rows - 1][cols - 1]) < data.eps) {
             do_basis_change = false;
             std::cout << "Artificial variables are derived (^_^)" << std::endl;
         } else if (simplex_table[rows - 1][cols - 1] < 0) {
@@ -154,38 +154,42 @@ void Solver::artificial_basis_2() {
         }
     }
 
-    print();
+
     matrix_resize(counter_of_artificial_vars);
     --data.nL_rows;
+    print();
 }
 
 void Solver::Simplex_method() {
     bool do_optimum_decision = true;
     while (do_optimum_decision) {
 
-        chose_col();
-        chose_row(data.nL_rows);
-        jordan();
-
-        for (size_t i = 0; i < rows; ++i) {
-            if (i != data.chose_row) {
-                simplex_table[i][data.chose_col] *= (-1);
-            }
-        }
-
-        print();
-
-        data.min_elem_L1 = 0;
-        data.min_koef = 100000;
-
-
-        for (size_t j = 0; j < cols; ++j) {
+        for (size_t j = 0; j < cols - 1; ++j) {
             if (simplex_table[rows - 1][j] > 0) {
                 do_optimum_decision = false;
             } else {
                 do_optimum_decision = true;
                 break;
             }
+        }
+
+        if(do_optimum_decision){
+            chose_col();
+            chose_row(data.nL_rows);
+            jordan();
+
+            for (size_t i = 0; i < rows; ++i) {
+                if (i != data.chose_row) {
+                    simplex_table[i][data.chose_col] *= (-1);
+                }
+            }
+
+            print();
+
+            data.min_elem_L1 = 0;
+            data.min_koef = 100000;
+        } else {
+            std::cout << "Optimum: " << simplex_table[rows - 1][cols - 1] << std::endl;
         }
     }
 }
@@ -209,7 +213,7 @@ void Solver::matrix_resize(size_t counter_of_artificial_vars) {
     for (size_t i = 0; i < simplex_table.size() - 1; ++i) {
         size_t j_col = 0;
         for (size_t j = 0; j < simplex_table[i].size(); ++j) {
-            if (simplex_table[rows - 1][j] == 0) {
+            if (std::abs(simplex_table[rows - 1][j]) < data.eps) {
                 simplex_table_copy[i][j_col] = simplex_table[i][j];
                 ++j_col;
             }
